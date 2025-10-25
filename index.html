@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>کاویدا 🌱 - ارتباطات معنادار</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet"
+    integrity="sha384-h1N6V2vWdQ2oQk3YspKzD2tzBA4gF3i6Doxr6K2y2bH8rQv1V4F6lN7D0lZ0e6sF" crossorigin="anonymous">
+  <!-- Vazir Font CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/vazir-font@32.105.0/dist/font-face.css" rel="stylesheet"
+    integrity="sha384-YourIntegrityHere" crossorigin="anonymous">
+
+  <style>
+    @font-face {
+      font-family: 'Vazir';
+      src: url('./assets/fonts/Vazir-Bold.woff2') format('woff2'),
+        url('./assets/fonts/Vazir-Bold.woff') format('woff');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    /* ---------- canvas background ---------- */
+    :root {
+      --bg-color-start: #eaf6ea;
+      --bg-color-end: #f6fff6;
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      direction: rtl;
+      font-family: 'Vazir', sans-serif;
+      background: linear-gradient(180deg, var(--bg-color-start), var(--bg-color-end));
+      overflow-x: hidden;
+    }
+
+    /* Canvas sits behind all content */
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none; /* don't block clicks by default */
+      display: block;
+    }
+
+    /* page content above canvas */
+    .page-container {
+      position: relative;
+      z-index: 3;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 40px 20px;
+      box-sizing: border-box;
+    }
+
+    .hero-section {
+      text-align: center;
+      padding: 20px;
+      color: #133617;
+    }
+
+    .text-overlay {
+      background-color: rgba(255, 255, 255, 0.85);
+      padding: 20px;
+      border-radius: 12px;
+      display: inline-block;
+      box-shadow: 0 6px 20px rgba(16, 36, 16, 0.08);
+      backdrop-filter: blur(4px);
+      max-width: 95%;
+    }
+
+    .hero-section h1 {
+      font-size: 2.5rem;
+      font-weight: bold;
+      margin: 0;
+    }
+
+    .hero-section p {
+      font-size: 1.15rem;
+      margin: 10px 0;
+    }
+
+    .btn-telegram {
+      background-color: #18cf18;
+      color: white;
+      font-size: 1.1rem;
+      padding: 10px 20px;
+      border-radius: 25px;
+      transition: transform 0.25s ease, background-color 0.25s ease;
+      display: inline-block;
+      text-decoration: none;
+    }
+
+    .btn-telegram:hover {
+      background-color: #27b927;
+      transform: scale(1.05);
+    }
+
+    .app-image,
+    .logo-image {
+      max-width: 100%;
+      height: auto;
+      margin: 12px auto;
+      display: block;
+    }
+
+    .footer {
+      background-color: #1f492b;
+      color: white;
+      padding: 18px 0;
+      text-align: center;
+      width: 100%;
+      position: fixed;
+      bottom: 0;
+      z-index: 4;
+    }
+
+    /* small screens adjustments */
+    @media (max-width: 600px) {
+      .hero-section h1 {
+        font-size: 1.8rem;
+      }
+
+      .text-overlay {
+        padding: 14px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Canvas for animated nodes & edges -->
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+<div class="page-container">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="text-overlay">
+      <img src="./assets/img/logo.png" alt="Kavida Logo" class="logo-image img-fluid" style="max-width: 200px;">
+      <h1>کاویدا 🌱</h1>
+      <p>پلتفرمی هوشمند برای هدف‌گذاری و ارتباطات معنادار</p>
+
+      <!-- پیام آماده‌سازی -->
+      <p style="color:#2f5b2f; font-weight:500; margin-top:10px; line-height:1.6;">
+        در حال آماده‌سازی کاویدا هستیم<br>
+        به‌زودی کنار شما خواهیم بود!
+      </p>
+    </div>
+  </section>
+</div>
+
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p>© 2025 کاویدا. تمامی حقوق محفوظ است.</p>
+    </div>
+  </footer>
+
+  <!-- Bootstrap 5 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+  <script>
+    /**
+     * Animated background: circular nodes + connecting edges
+     *
+     * Features:
+     * - Responsive devicePixelRatio support
+     * - Node movement + wrap-around
+     * - Edges drawn when nodes are near each other (alpha based on distance)
+     * - Simple mouse interaction: nodes are slightly repelled by cursor
+     * - Node count scales with viewport size to preserve performance
+     */
+
+    (() => {
+      const canvas = document.getElementById('bg-canvas');
+      const ctx = canvas.getContext('2d', { alpha: true });
+
+      // Settings - tweak these to change look & cost
+      const SETTINGS = {
+        baseNodeDensity: 0.00012, // nodes per pixel (viewport * density => node count)
+        minNodeRadius: 1.8,
+        maxNodeRadius: 5.5,
+        maxSpeed: 0.1, // px per ms
+        edgeMaxDistance: 140, // px
+        mouseRepelStrength: 0.12,
+        mouseRepelRadius: 120,
+        glowStrength: 0.6,
+        nodeColors: [
+          'rgba(24, 207, 24, 0.95)',   // mint
+          'rgba(44, 169, 95, 0.95)',   // green
+          'rgba(34, 124, 52, 0.95)'    // dark green
+        ]
+      };
+
+      let DPR = Math.max(1, window.devicePixelRatio || 1);
+      let width = 0, height = 0, nodeCount = 0;
+      let nodes = [];
+      let lastTime = performance.now();
+      let pointer = { x: -10000, y: -10000, isActive: false };
+
+      // create or resize canvas to match device pixel ratio
+      function resizeCanvas() {
+        DPR = Math.max(1, window.devicePixelRatio || 1);
+        width = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+        height = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+
+        canvas.width = Math.floor(width * DPR);
+        canvas.height = Math.floor(height * DPR);
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+        // determine node count relative to viewport size
+        const area = width * height;
+        const recommended = Math.round(area * SETTINGS.baseNodeDensity);
+        // clamp for performance
+        const clamped = Math.min(Math.max(recommended, 25), 150);
+        nodeCount = clamped;
+
+        // rebuild nodes if necessary
+        initNodes();
+      }
+
+      function randRange(a, b) {
+        return a + Math.random() * (b - a);
+      }
+
+      function initNodes() {
+        // if nodes length already appropriate, try to keep old nodes and just adjust count
+        const old = nodes.slice(0);
+        nodes = [];
+        for (let i = 0; i < nodeCount; i++) {
+          const radius = randRange(SETTINGS.minNodeRadius, SETTINGS.maxNodeRadius);
+          const node = {
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: randRange(-SETTINGS.maxSpeed, SETTINGS.maxSpeed),
+            vy: randRange(-SETTINGS.maxSpeed, SETTINGS.maxSpeed),
+            r: radius,
+            color: SETTINGS.nodeColors[Math.floor(Math.random() * SETTINGS.nodeColors.length)],
+            phase: Math.random() * Math.PI * 2 // for subtle size pulsation
+          };
+          // if there's old nodes, reuse position/velocity for smooth resize
+          if (old[i]) {
+            node.x = old[i].x;
+            node.y = old[i].y;
+            node.vx = old[i].vx;
+            node.vy = old[i].vy;
+          }
+          nodes.push(node);
+        }
+      }
+
+      function drawNode(node, t) {
+        // subtle pulsation
+        const pulse = 1 + 0.06 * Math.sin(t * 0.002 + node.phase);
+        const r = node.r * pulse;
+
+        // glow
+        if (SETTINGS.glowStrength > 0) {
+          const g = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, r * 6);
+          g.addColorStop(0, node.color.replace(/[\d.]+\)$/,'0.9)'));
+          g.addColorStop(0.25, node.color.replace(/[\d.]+\)$/,'0.55)'));
+          g.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, r * 6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // solid center
+        ctx.beginPath();
+        ctx.fillStyle = node.color;
+        ctx.arc(node.x, node.y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function drawEdge(a, b) {
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > SETTINGS.edgeMaxDistance) return;
+        const t = dist / SETTINGS.edgeMaxDistance;
+        const alpha = (1 - t) * 0.45; // edge alpha fades with distance
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.strokeStyle = `rgba(34, 110, 44, ${alpha})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      function updateNodes(dt) {
+        const repelR2 = SETTINGS.mouseRepelRadius * SETTINGS.mouseRepelRadius;
+
+        for (let i = 0; i < nodes.length; i++) {
+          const n = nodes[i];
+
+          // mouse repulsion
+          if (pointer.isActive) {
+            const dx = n.x - pointer.x;
+            const dy = n.y - pointer.y;
+            const d2 = dx * dx + dy * dy;
+            if (d2 < repelR2 && d2 > 0.0001) {
+              const d = Math.sqrt(d2);
+              const effect = (1 - d / SETTINGS.mouseRepelRadius) * SETTINGS.mouseRepelStrength;
+              n.vx += (dx / d) * effect * dt;
+              n.vy += (dy / d) * effect * dt;
+            }
+          }
+
+          // velocity clamp
+          const speed = Math.hypot(n.vx, n.vy);
+          if (speed > SETTINGS.maxSpeed) {
+            n.vx = (n.vx / speed) * SETTINGS.maxSpeed;
+            n.vy = (n.vy / speed) * SETTINGS.maxSpeed;
+          }
+
+          n.x += n.vx * dt;
+          n.y += n.vy * dt;
+
+          // gentle wrapping around edges (keeps distribution even)
+          if (n.x < -20) n.x = width + 20;
+          if (n.x > width + 20) n.x = -20;
+          if (n.y < -20) n.y = height + 20;
+          if (n.y > height + 20) n.y = -20;
+        }
+      }
+
+      function animate(now) {
+        const dt = Math.min(now - lastTime, 40); // ms, cap to avoid big jumps
+        lastTime = now;
+
+        // clear with subtle transparent fill for motion blur effect
+        ctx.clearRect(0, 0, width, height);
+
+        // optionally draw a very subtle vignette or background pattern (disabled for clarity)
+        // draw edges first so they appear beneath node glows
+        // naive O(n^2) edges — nodeCount is clamped for perf
+        for (let i = 0; i < nodes.length; i++) {
+          const a = nodes[i];
+          for (let j = i + 1; j < nodes.length; j++) {
+            drawEdge(a, nodes[j]);
+          }
+        }
+
+        // update
+        updateNodes(dt);
+
+        // draw nodes
+        for (let i = 0; i < nodes.length; i++) {
+          drawNode(nodes[i], now);
+        }
+
+        // subtle parallax: shift canvas with small transform based on pointer (optional)
+        // Not applied to avoid layout upset—kept simple
+
+        requestAnimationFrame(animate);
+      }
+
+      /* ---------- Pointer / Interaction ---------- */
+      function handlePointerMove(e) {
+        pointer.isActive = true;
+        const rect = canvas.getBoundingClientRect();
+        pointer.x = (e.clientX ?? (e.touches && e.touches[0].clientX)) - rect.left;
+        pointer.y = (e.clientY ?? (e.touches && e.touches[0].clientY)) - rect.top;
+      }
+
+      function handlePointerLeave() {
+        pointer.isActive = false;
+        // push pointer off-screen so nodes stop being repelled
+        pointer.x = -10000;
+        pointer.y = -10000;
+      }
+
+      // performance: throttle resize events
+      let resizeTimer = null;
+      window.addEventListener('resize', () => {
+        if (resizeTimer) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          resizeCanvas();
+          resizeTimer = null;
+        }, 120);
+      });
+
+      // pointer events (desktop + touch). Canvas pointer events disabled by default with pointer-events: none.
+      // To allow interaction while keeping pointer-events none for other elements, add a lightweight listener global
+      window.addEventListener('mousemove', handlePointerMove, { passive: true });
+      window.addEventListener('touchmove', handlePointerMove, { passive: true });
+      window.addEventListener('mouseout', handlePointerLeave, { passive: true });
+      window.addEventListener('touchend', handlePointerLeave, { passive: true });
+      window.addEventListener('touchcancel', handlePointerLeave, { passive: true });
+
+      // initialize
+      resizeCanvas();
+      lastTime = performance.now();
+      requestAnimationFrame(animate);
+
+      // expose minor API for debugging/tweaking if needed
+      window.__bgParticles = {
+        settings: SETTINGS,
+        getNodes: () => nodes,
+      };
+
+    })();
+  </script>
+</body>
+
+</html>
